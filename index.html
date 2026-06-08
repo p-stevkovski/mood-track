@@ -10,7 +10,7 @@
 <title>MoodTrack - How Are You Feeling Today?</title>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,600;12..96,800&family=DM+Sans:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
   :root {
     --bg: #0f0e17;
@@ -199,7 +199,7 @@
 
   /* Activity */
   .activity-grid {
-    display: flex; gap: 10px; flex-wrap: wrap;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
   }
    .act-btn {
      background: var(--surface2); border: 2px solid transparent;
@@ -295,6 +295,15 @@
      cursor: pointer; transition: all 0.2s;
      display: inline-block; margin: 0 8px 0 0;
    }
+   .export-btn, .delete-btn { cursor: pointer; }
+   .export-btn:hover, .export-btn:active, .export-btn:focus,
+   .delete-btn:hover, .delete-btn:active, .delete-btn:focus { 
+     transform: none; 
+     border-color: rgba(255,255,255,0.1) !important; 
+     color: var(--muted) !important; 
+     outline: none !important; 
+     box-shadow: none !important; 
+   }
    .reset-btn:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
    .reset-btn:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -324,6 +333,7 @@
      .sleep-grid { grid-template-columns: repeat(2, 1fr); }
      .sleep-btn { padding: 12px 6px; }
      .card { padding: 24px 20px; }
+     #chart-wrap { padding: 16px; }
    }
 </style>
 </head>
@@ -416,8 +426,8 @@
        <canvas id="trend-chart" height="140"></canvas>
      </div>
      <div class="history-actions">
-       <button class="reset-btn" id="export-btn">⬇ Export Data</button>
-       <button class="reset-btn" id="reset-btn">🗑 Delete All</button>
+       <button class="reset-btn export-btn" id="export-btn">⬇ Export Data</button>
+       <button class="reset-btn delete-btn" id="reset-btn">🗑 Delete All</button>
      </div>
    </div>
 
@@ -612,7 +622,7 @@ function drawChart(data) {
 
   ctx.clearRect(0, 0, W, H);
 
-  const pad = { l: 16, r: 16, t: 16, b: 28 };
+  const pad = { l: 16, r: 16, t: 32, b: 28 };
   const chartW = W - pad.l - pad.r;
   const chartH = H - pad.t - pad.b;
   const n = data.length;
@@ -640,6 +650,7 @@ function drawChart(data) {
 
   drawLine(data.map(d => d.mood), 5, '#a78bfa');
   drawLine(data.map(d => (10 - d.stress) / 2), 5, '#06d6a0');
+  drawLine(data.map(d => d.sleep), 4, '#ffd166');
 
   // X labels
   ctx.fillStyle = 'rgba(168,164,192,0.7)';
@@ -656,6 +667,8 @@ function drawChart(data) {
   ctx.fillStyle = 'rgba(168,164,192,0.7)'; ctx.fillText('Mood', pad.l + 14, pad.t - 2);
   ctx.fillStyle = '#06d6a0'; ctx.fillRect(pad.l + 110, pad.t - 8, 10, 3);
   ctx.fillStyle = 'rgba(168,164,192,0.7)'; ctx.fillText('Calmness', pad.l + 124, pad.t - 2);
+  ctx.fillStyle = '#ffd166'; ctx.fillRect(pad.l + 200, pad.t - 8, 10, 3);
+  ctx.fillStyle = 'rgba(168,164,192,0.7)'; ctx.fillText('Sleep', pad.l + 214, pad.t - 2);
 }
 
 document.getElementById('reset-btn').addEventListener('click', () => {
@@ -663,6 +676,7 @@ document.getElementById('reset-btn').addEventListener('click', () => {
      localStorage.removeItem('wellbeing_history');
      renderHistory();
    }
+   document.getElementById('reset-btn').blur();
 });
 
 document.getElementById('export-btn').addEventListener('click', () => {
@@ -722,6 +736,9 @@ document.getElementById('export-btn').addEventListener('click', () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    // Remove focus from button to prevent it staying "active/lit"
+    document.getElementById('export-btn').blur();
 
     console.log(`Exported ${hist.length} entries to ${filename}`);
 });
